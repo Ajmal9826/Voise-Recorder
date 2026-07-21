@@ -5,6 +5,7 @@ workflows:
       java: 17
     scripts:
       - chmod +x ./gradlew
-      - ./gradlew clean assembleDebug
+      - ./gradlew clean
+      - ./gradlew assembleDebug --stacktrace
     artifacts:
       - app/build/outputs/apk/debug/*.apk
