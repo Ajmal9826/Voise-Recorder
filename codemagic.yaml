@@ -4,6 +4,7 @@ workflows:
     environment:
       java: 17
     scripts:
+      - chmod +x ./gradlew
       - ./gradlew clean assembleDebug
     artifacts:
       - app/build/outputs/apk/debug/*.apk
