@@ -4,7 +4,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="24dp"
-    android:gravity="center">
+    android:gravity="center"
+    android:background="#FFFFFF">
 
     <TextView
         android:id="@+id/tvTimer"
@@ -19,7 +20,7 @@
         android:layout_width="match_parent"
         android:layout_height="100dp"
         android:layout_marginTop="20dp"
-        android:background="#1E1E1E"/>
+        android:background="@android:color/transparent"/> <!-- Transparent ஆக்கிட்டேன் -->
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -40,20 +41,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="⏸ Pause" 
-            android:layout_margin="4dp"/>
-            
-        <Button 
-            android:id="@+id/btnResume" 
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="▶ Resume" 
-            android:layout_margin="4dp"/>
-            
-        <Button 
-            android:id="@+id/btnStop" 
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="⏹ Stop" 
             android:layout_margin="4dp"/>
     </LinearLayout>
 
