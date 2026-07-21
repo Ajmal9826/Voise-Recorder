@@ -28,10 +28,33 @@
         android:gravity="center"
         android:layout_marginTop="30dp">
 
-        <Button android:id="@+id/btnRecord" android:text="🎤 Record" android:layout_margin="4dp"/>
-        <Button android:id="@+id/btnPause" android:text="⏸ Pause" android:layout_margin="4dp"/>
-        <Button android:id="@+id/btnResume" android:text="▶ Resume" android:layout_margin="4dp"/>
-        <Button android:id="@+id/btnStop" android:text="⏹ Stop" android:layout_margin="4dp"/>
+        <Button 
+            android:id="@+id/btnRecord" 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎤 Record" 
+            android:layout_margin="4dp"/>
+            
+        <Button 
+            android:id="@+id/btnPause" 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⏸ Pause" 
+            android:layout_margin="4dp"/>
+            
+        <Button 
+            android:id="@+id/btnResume" 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="▶ Resume" 
+            android:layout_margin="4dp"/>
+            
+        <Button 
+            android:id="@+id/btnStop" 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⏹ Stop" 
+            android:layout_margin="4dp"/>
     </LinearLayout>
 
     <LinearLayout
@@ -41,9 +64,26 @@
         android:gravity="center"
         android:layout_marginTop="10dp">
 
-        <Button android:id="@+id/btnPlay" android:text="▶ Play" android:layout_margin="4dp"/>
-        <Button android:id="@+id/btnShare" android:text="📤 Share" android:layout_margin="4dp"/>
-        <Button android:id="@+id/btnDelete" android:text="🗑 Delete" android:layout_margin="4dp"/>
+        <Button 
+            android:id="@+id/btnPlay" 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="▶ Play" 
+            android:layout_margin="4dp"/>
+            
+        <Button 
+            android:id="@+id/btnShare" 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📤 Share" 
+            android:layout_margin="4dp"/>
+            
+        <Button 
+            android:id="@+id/btnDelete" 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🗑 Delete" 
+            android:layout_margin="4dp"/>
     </LinearLayout>
 
 </LinearLayout>
