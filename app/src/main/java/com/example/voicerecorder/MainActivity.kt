@@ -74,11 +74,11 @@ class MainActivity : AppCompatActivity() {
         btnDelete.setOnClickListener { deleteRecording() }
 
         lvRecordings.setOnItemClickListener { _, position, _ ->
-            selectedFile = File(getExternalFilesDir("VoiceRecorder"), recordingsList[position])
-            btnPlay.isEnabled = true
-            btnShare.isEnabled = true
-            btnDelete.isEnabled = true
-        }
+    selectedFile = File(getExternalFilesDir("VoiceRecorder"), recordingsList[position])
+    btnPlay.isEnabled = true
+    btnShare.isEnabled = true
+    btnDelete.isEnabled = true
+}
     }
 
     private fun startRecording() {
