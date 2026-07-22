@@ -78,6 +78,8 @@ class MainActivity : AppCompatActivity() {
     btnPlay.isEnabled = true
     btnShare.isEnabled = true
     btnDelete.isEnabled = true
+   }
+
 }
 
     private fun startRecording() {
