@@ -8,6 +8,7 @@ import android.media.MediaRecorder
 import android.media.audiofx.AcousticEchoCanceler
 import android.media.audiofx.NoiseSuppressor
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -79,14 +80,18 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
             }
         }
         
+        // prepare() க்கு அப்புறம் தான் audioSessionId கிடைக்கும்
         val sessionId = mediaRecorder?.audioSessionId ?: 0
-if (sessionId != 0 && NoiseSuppressor.isAvailable()) {
-    noiseSuppressor = NoiseSuppressor.create(sessionId)
-            noiseSuppressor?.enabled = true
-        }
-        if (AcousticEchoCanceler.isAvailable()) {
-            echoCanceler = AcousticEchoCanceler.create(sessionId)
-            echoCanceler?.enabled = true
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && sessionId != 0) {
+            if (NoiseSuppressor.isAvailable()) {
+                noiseSuppressor = NoiseSuppressor.create(sessionId)
+                noiseSuppressor?.enabled = true
+            }
+            if (AcousticEchoCanceler.isAvailable()) {
+                echoCanceler = AcousticEchoCanceler.create(sessionId)
+                echoCanceler?.enabled = true
+            }
         }
     }
 
