@@ -1,5 +1,7 @@
 package com.example.voicerecorder
 
+import android.media.audiofx.AcousticEchoCanceler
+import android.media.audiofx.NoiseSuppressor
 import android.Manifest
 import android.content.Intent
 import android.media.MediaPlayer
@@ -37,6 +39,9 @@ class MainActivity : AppCompatActivity() {
     private var runnable: Runnable? = null
     private lateinit var recordingsAdapter: ArrayAdapter<String>
     private val recordingsList = ArrayList<String>()
+
+    private var noiseSuppressor: NoiseSuppressor? = null
+    private var echoCanceler: AcousticEchoCanceler? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -83,50 +88,34 @@ class MainActivity : AppCompatActivity() {
 }
 
     private fun startRecording() {
-        if (isRecording) return
+    currentFilePath = "${getExternalFilesDir("VoiceRecorder")}/REC_${System.currentTimeMillis()}.m4a"
 
-        waveformView.startRecording()
-
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        tempFileName = "TEMP_$timeStamp.mp3"
-        val file = File(getExternalFilesDir("VoiceRecorder"), tempFileName)
-        file.parentFile?.mkdirs()
-
-        mediaRecorder = MediaRecorder().apply {
-            setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            setOutputFile(file.absolutePath)
-            prepare()
-            start()
-        }
-        isRecording = true
-        btnRecord.text = "Stop"
-        btnPause.isEnabled = true
-        btnSave.isEnabled = false
-        startTimer()
-        Toast.makeText(this, "Recording Started", Toast.LENGTH_SHORT).show()
+    mediaRecorder = MediaRecorder().apply {
+        setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
+        setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+        setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        setOutputFile(currentFilePath)
+        prepare()
+        start()
     }
 
+    val sessionId = mediaRecorder?.audioSessionId ?: 0
+    if (NoiseSuppressor.isAvailable()) {
+        noiseSuppressor = NoiseSuppressor.create(sessionId)
+        noiseSuppressor?.enabled = true
+    }
+    if (AcousticEchoCanceler.isAvailable()) {
+        echoCanceler = AcousticEchoCanceler.create(sessionId)
+        echoCanceler?.enabled = true
+    }
+}
     private fun stopRecording() {
-        waveformView.stopRecording()
-
-        try {
-            mediaRecorder?.stop()
-            mediaRecorder?.release()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        mediaRecorder = null
-        isRecording = false
-        btnRecord.text = "Record"
-        btnPause.text = "Pause"
-        btnPause.isEnabled = false
-        btnSave.isEnabled = true
-        stopTimer()
-        Toast.makeText(this, "Stopped. Press Save", Toast.LENGTH_SHORT).show()
-    }
-
+    mediaRecorder?.stop()
+    mediaRecorder?.release()
+    mediaRecorder = null
+    noiseSuppressor?.release()
+    echoCanceler?.release()
+}
     private fun saveRecording() {
         if (tempFileName == null) return
         val tempFile = File(getExternalFilesDir("VoiceRecorder"), tempFileName)
