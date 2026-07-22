@@ -80,8 +80,8 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
         }
         
         val sessionId = mediaRecorder?.audioSessionId ?: 0
-        if (NoiseSuppressor.isAvailable()) {
-            noiseSuppressor = NoiseSuppressor.create(sessionId)
+if (sessionId != 0 && NoiseSuppressor.isAvailable()) {
+    noiseSuppressor = NoiseSuppressor.create(sessionId)
             noiseSuppressor?.enabled = true
         }
         if (AcousticEchoCanceler.isAvailable()) {
