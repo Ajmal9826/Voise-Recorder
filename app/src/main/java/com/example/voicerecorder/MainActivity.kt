@@ -1,232 +1,160 @@
 package com.example.voicerecorder
 
-import android.media.audiofx.AcousticEchoCanceler
-import android.media.audiofx.NoiseSuppressor
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.MediaRecorder
-import android.os.*
+import android.media.audiofx.AcousticEchoCanceler
+import android.media.audiofx.NoiseSuppressor
+import android.net.Uri
+import android.os.Bundle
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
-import android.widget.*
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
+import java.io.IOException
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
 
     private lateinit var btnRecord: Button
-    private lateinit var btnPause: Button
-    private lateinit var btnSave: Button
-    private lateinit var btnPlay: Button
-    private lateinit var btnShare: Button
-    private lateinit var btnDelete: Button
-    private lateinit var tvTimer: TextView
-    private lateinit var waveformView: WaveformView
-    private lateinit var lvRecordings: ListView
-
+    private lateinit var rvRecordings: RecyclerView
     private var mediaRecorder: MediaRecorder? = null
     private var mediaPlayer: MediaPlayer? = null
-    private var isRecording = false
-    private var isPaused = false
-    private var tempFileName: String? = null
-    private var selectedFile: File? = null
-
-    private var seconds = 0
-    private var timer: Handler? = null
-    private var runnable: Runnable? = null
-    private lateinit var recordingsAdapter: ArrayAdapter<String>
-    private val recordingsList = ArrayList<String>()
-
+    private var currentFilePath: String? = null
     private var noiseSuppressor: NoiseSuppressor? = null
     private var echoCanceler: AcousticEchoCanceler? = null
+    private lateinit var adapter: RecordingAdapter
+    private val recordingFiles = ArrayList<File>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         btnRecord = findViewById(R.id.btnRecord)
-        btnPause = findViewById(R.id.btnPause)
-        btnSave = findViewById(R.id.btnSave)
-        btnPlay = findViewById(R.id.btnPlay)
-        btnShare = findViewById(R.id.btnShare)
-        btnDelete = findViewById(R.id.btnDelete)
-        tvTimer = findViewById(R.id.tvTimer)
-        waveformView = findViewById(R.id.waveformView)
-        lvRecordings = findViewById(R.id.lvRecordings)
+        rvRecordings = findViewById(R.id.rvRecordings)
 
-        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 1)
-
-        btnPause.isEnabled = false
-        btnSave.isEnabled = false
-        btnPlay.isEnabled = false
-        btnShare.isEnabled = false
-        btnDelete.isEnabled = false
+        // RecyclerView setup
+        adapter = RecordingAdapter(recordingFiles, this)
+        rvRecordings.layoutManager = LinearLayoutManager(this)
+        rvRecordings.adapter = adapter
 
         loadRecordings()
 
         btnRecord.setOnClickListener {
-            if (!isRecording) startRecording() else stopRecording()
+            if (mediaRecorder == null) {
+                startRecording()
+                btnRecord.text = "Stop Recording"
+            } else {
+                stopRecording()
+                btnRecord.text = "Start Recording"
+                loadRecordings()
+            }
         }
-        btnPause.setOnClickListener {
-            if (!isPaused) pauseRecording() else resumeRecording()
-        }
-        btnSave.setOnClickListener { saveRecording() }
-        btnPlay.setOnClickListener { playRecording() }
-        btnShare.setOnClickListener { shareRecording() }
-        btnDelete.setOnClickListener { deleteRecording() }
 
-        lvRecordings.setOnItemClickListener { _, _, position, _ ->
-    selectedFile = File(getExternalFilesDir("VoiceRecorder"), recordingsList[position])
-    btnPlay.isEnabled = true
-    btnShare.isEnabled = true
-    btnDelete.isEnabled = true
-   }
-
-}
+        requestPermission()
+    }
 
     private fun startRecording() {
-    currentFilePath = "${getExternalFilesDir("VoiceRecorder")}/REC_${System.currentTimeMillis()}.m4a"
-
-    mediaRecorder = MediaRecorder().apply {
-        setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
-        setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-        setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-        setOutputFile(currentFilePath)
-        prepare()
-        start()
+        currentFilePath = "${getExternalFilesDir("VoiceRecorder")}/REC_${System.currentTimeMillis()}.m4a"
+        mediaRecorder = MediaRecorder().apply {
+            setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
+            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setOutputFile(currentFilePath)
+            prepare()
+            start()
+        }
+        val sessionId = mediaRecorder?.audioSessionId ?: 0
+        if (NoiseSuppressor.isAvailable()) {
+            noiseSuppressor = NoiseSuppressor.create(sessionId)
+            noiseSuppressor?.enabled = true
+        }
+        if (AcousticEchoCanceler.isAvailable()) {
+            echoCanceler = AcousticEchoCanceler.create(sessionId)
+            echoCanceler?.enabled = true
+        }
     }
 
-    val sessionId = mediaRecorder?.audioSessionId ?: 0
-    if (NoiseSuppressor.isAvailable()) {
-        noiseSuppressor = NoiseSuppressor.create(sessionId)
-        noiseSuppressor?.enabled = true
-    }
-    if (AcousticEchoCanceler.isAvailable()) {
-        echoCanceler = AcousticEchoCanceler.create(sessionId)
-        echoCanceler?.enabled = true
-    }
-}
     private fun stopRecording() {
-    mediaRecorder?.stop()
-    mediaRecorder?.release()
-    mediaRecorder = null
-    noiseSuppressor?.release()
-    echoCanceler?.release()
-}
-    private fun saveRecording() {
-        if (tempFileName == null) return
-        val tempFile = File(getExternalFilesDir("VoiceRecorder"), tempFileName)
-        val finalName = "REC_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.mp3"
-        val finalFile = File(getExternalFilesDir("VoiceRecorder"), finalName)
-        tempFile.renameTo(finalFile)
-
-        tempFileName = null
-        btnSave.isEnabled = false
-        loadRecordings()
-        Toast.makeText(this, "Saved: $finalName", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun pauseRecording() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isRecording) {
-            mediaRecorder?.pause()
-            isPaused = true
-            btnPause.text = "Resume"
-            stopTimer()
-        }
-    }
-
-    private fun resumeRecording() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isRecording) {
-            mediaRecorder?.resume()
-            isPaused = false
-            btnPause.text = "Pause"
-            startTimer()
-        }
-    }
-
-    private fun playRecording() {
-        selectedFile?.let { file ->
-            if (file.exists()) {
-                mediaPlayer?.release()
-                mediaPlayer = MediaPlayer().apply {
-                    setDataSource(file.absolutePath)
-                    prepare()
-                    start()
-                    setOnCompletionListener { release() }
-                }
-                Toast.makeText(this, "Playing: ${file.name}", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun shareRecording() {
-        selectedFile?.let { file ->
-            if (file.exists()) {
-                val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "audio/*"
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                startActivity(Intent.createChooser(intent, "Share Recording"))
-            }
-        }
-    }
-
-    private fun deleteRecording() {
-        selectedFile?.let { file ->
-            if (file.exists() && file.delete()) {
-                selectedFile = null
-                btnPlay.isEnabled = false
-                btnShare.isEnabled = false
-                btnDelete.isEnabled = false
-                loadRecordings()
-                Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show()
-            }
-        }
+        mediaRecorder?.stop()
+        mediaRecorder?.release()
+        mediaRecorder = null
+        noiseSuppressor?.release()
+        echoCanceler?.release()
     }
 
     private fun loadRecordings() {
-        recordingsList.clear()
         val dir = getExternalFilesDir("VoiceRecorder")
-        dir?.listFiles()?.filter { it.name.endsWith(".mp3") &&!it.name.startsWith("TEMP") }
-          ?.forEach { recordingsList.add(it.name) }
-
-        recordingsAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, recordingsList)
-        lvRecordings.adapter = recordingsAdapter
-    }
-
-    private fun startTimer() {
-        timer = Handler(Looper.getMainLooper())
-        runnable = object : Runnable {
-            override fun run() {
-                seconds++
-                tvTimer.text = String.format("%02d:%02d", seconds / 60, seconds % 60)
-
-                if (isRecording && mediaRecorder!= null) {
-                    val amp = mediaRecorder!!.maxAmplitude.toFloat()
-                    waveformView.updateAmplitude(amp)
-                }
-
-                timer?.postDelayed(this, 100)
-            }
+        recordingFiles.clear()
+        dir?.listFiles()?.filter { it.isFile && it.name.endsWith(".m4a") }?.let {
+            recordingFiles.addAll(it.sortedByDescending { f -> f.lastModified() })
         }
-        timer?.post(runnable!!)
+        adapter.notifyDataSetChanged()
     }
 
-    private fun stopTimer() {
-        timer?.removeCallbacks(runnable!!)
-        seconds = 0
-        tvTimer.text = "00:00"
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        mediaRecorder?.release()
+    // 4 Button Click Functions
+    override fun onPlay(file: File) {
         mediaPlayer?.release()
-        timer?.removeCallbacks(runnable!!)
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(file.absolutePath)
+            prepare()
+            start()
+            setOnCompletionListener { release() }
+        }
+        Toast.makeText(this, "Playing: ${file.name}", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun onShare(file: File) {
+        val uri: Uri = FileProvider.getUriForFile(this, "${packageName}.provider", file)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "audio/*"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(intent, "Share Recording"))
+    }
+
+    override fun onDelete(file: File) {
+        AlertDialog.Builder(this)
+            .setTitle("Delete")
+            .setMessage("Delete ${file.name}?")
+            .setPositiveButton("Yes") { _, _ ->
+                file.delete()
+                loadRecordings()
+                Toast.makeText(this, "Deleted", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("No", null)
+            .show()
+    }
+
+    override fun onRename(file: File) {
+        val editText = EditText(this)
+        editText.setText(file.nameWithoutExtension)
+        AlertDialog.Builder(this)
+            .setTitle("Rename File")
+            .setView(editText)
+            .setPositiveButton("Save") { _, _ ->
+                val newName = editText.text.toString() + ".m4a"
+                val newFile = File(file.parent, newName)
+                if (file.renameTo(newFile)) {
+                    loadRecordings()
+                    Toast.makeText(this, "Renamed", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun requestPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 200)
+        }
     }
 }
