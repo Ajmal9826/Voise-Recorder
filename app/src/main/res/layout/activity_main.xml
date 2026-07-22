@@ -4,24 +4,26 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="24dp"
-    android:gravity="center"
     android:background="#FFFFFF">
 
     <TextView
         android:id="@+id/tvTimer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:text="00:00"
         android:textSize="48sp"
         android:textStyle="bold"/>
 
+    <!-- Waveform - background transparent, line visible -->
     <com.example.voicerecorder.WaveformView
         android:id="@+id/waveformView"
         android:layout_width="match_parent"
         android:layout_height="100dp"
         android:layout_marginTop="20dp"
-        android:background="@android:color/transparent"/> <!-- Transparent ஆக்கிட்டேன் -->
+        android:background="@android:color/transparent"/>
 
+    <!-- 3 Buttons Row 1 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -42,8 +44,16 @@
             android:layout_height="wrap_content"
             android:text="⏸ Pause" 
             android:layout_margin="4dp"/>
+            
+        <Button 
+            android:id="@+id/btnSave" 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="💾 Save" 
+            android:layout_margin="4dp"/>
     </LinearLayout>
 
+    <!-- 3 Buttons Row 2 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -72,5 +82,20 @@
             android:text="🗑 Delete" 
             android:layout_margin="4dp"/>
     </LinearLayout>
+
+    <!-- Recordings List -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Saved Recordings:"
+        android:textStyle="bold"
+        android:layout_marginTop="20dp"/>
+
+    <ListView
+        android:id="@+id/lvRecordings"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="8dp"/>
 
 </LinearLayout>
