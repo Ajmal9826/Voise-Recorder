@@ -141,17 +141,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun shareRecording() {
-        val file = File(getExternalFilesDir("VoiceRecorder"), currentFileName)
-        if (file.exists()) {
+    if (currentFileName == null) {
+        Toast.makeText(this, "முதல்ல Record பண்ணு பா", Toast.LENGTH_SHORT).show()
+        return
+    }
+    
+    val file = File(getExternalFilesDir("VoiceRecorder"), currentFileName)
+    if (file.exists()) {
+        try {
             val uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
             val intent = Intent(Intent.ACTION_SEND).apply {
-                type = "audio/mp4"
+                type = "audio/*"
                 putExtra(Intent.EXTRA_STREAM, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             startActivity(Intent.createChooser(intent, "Share Recording"))
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Share failed: ${e.message}", Toast.LENGTH_LONG).show()
         }
+    } else {
+        Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show()
     }
+}
 
     private fun deleteRecording() {
         val file = File(getExternalFilesDir("VoiceRecorder"), currentFileName)
