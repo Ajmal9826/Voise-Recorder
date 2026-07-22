@@ -112,7 +112,7 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
     }
 
     override fun onShare(file: File) {
-        val uri: Uri = FileProvider.getUriForFile(this, "${packageName}.provider", file)
+        val uri: Uri = FileProvider.getUriForFile(this, "${packageName}.fileprovider", file)
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "audio/*"
             putExtra(Intent.EXTRA_STREAM, uri)
