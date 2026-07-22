@@ -40,12 +40,12 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
         btnRecord = findViewById(R.id.btnRecord)
         rvRecordings = findViewById(R.id.rvRecordings)
 
-        // RecyclerView setup
         adapter = RecordingAdapter(recordingFiles, this)
         rvRecordings.layoutManager = LinearLayoutManager(this)
         rvRecordings.adapter = adapter
 
         loadRecordings()
+        requestPermission()
 
         btnRecord.setOnClickListener {
             if (mediaRecorder == null) {
@@ -57,20 +57,28 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
                 loadRecordings()
             }
         }
-
-        requestPermission()
     }
 
     private fun startRecording() {
-        currentFilePath = "${getExternalFilesDir("VoiceRecorder")}/REC_${System.currentTimeMillis()}.m4a"
+        val dir = File(getExternalFilesDir(null), "VoiceRecorder")
+        if (!dir.exists()) {
+            dir.mkdirs()
+        }
+        currentFilePath = "${dir.absolutePath}/REC_${System.currentTimeMillis()}.m4a"
+        
         mediaRecorder = MediaRecorder().apply {
             setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
             setOutputFile(currentFilePath)
-            prepare()
-            start()
+            try {
+                prepare()
+                start()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
         }
+        
         val sessionId = mediaRecorder?.audioSessionId ?: 0
         if (NoiseSuppressor.isAvailable()) {
             noiseSuppressor = NoiseSuppressor.create(sessionId)
@@ -83,23 +91,32 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
     }
 
     private fun stopRecording() {
-        mediaRecorder?.stop()
+        try {
+            mediaRecorder?.stop()
+        } catch (e: RuntimeException) {
+            e.printStackTrace()
+        }
         mediaRecorder?.release()
         mediaRecorder = null
+        
         noiseSuppressor?.release()
+        noiseSuppressor = null
+        
         echoCanceler?.release()
+        echoCanceler = null
     }
 
     private fun loadRecordings() {
-        val dir = getExternalFilesDir("VoiceRecorder")
+        val dir = File(getExternalFilesDir(null), "VoiceRecorder")
         recordingFiles.clear()
-        dir?.listFiles()?.filter { it.isFile && it.name.endsWith(".m4a") }?.let {
-            recordingFiles.addAll(it.sortedByDescending { f -> f.lastModified() })
+        if (dir.exists()) {
+            dir.listFiles()?.filter { it.isFile && it.name.endsWith(".m4a") }?.let {
+                recordingFiles.addAll(it.sortedByDescending { f -> f.lastModified() })
+            }
         }
         adapter.notifyDataSetChanged()
     }
 
-    // 4 Button Click Functions
     override fun onPlay(file: File) {
         mediaPlayer?.release()
         mediaPlayer = MediaPlayer().apply {
@@ -156,5 +173,11 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 200)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mediaPlayer?.release()
+        mediaRecorder?.release()
     }
 }
