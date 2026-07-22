@@ -2,39 +2,61 @@ package com.example.voicerecorder
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
+import kotlin.math.abs
 
 class WaveformView @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
-) : View(context, attrs) {
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr) {
 
-    private val paint = Paint().apply { color = 0xFF00E676.toInt(); strokeWidth = 4f }
-    private var amplitudes: MutableList<Float> = mutableListOf()
+    private val paint = Paint().apply {
+        color = Color.parseColor("#1E90FF")
+        strokeWidth = 4f
+        isAntiAlias = true
+        style = Paint.Style.STROKE
+    }
 
-    fun addAmplitude(amp: Float) {
-        amplitudes.add(amp)
+    private val amplitudes = ArrayList<Float>()
+    private var isRecording = false
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+
+
+        if (amplitudes.isEmpty()) {
+            canvas.drawLine(0f, height / 2f, width.toFloat(), height / 2f, paint)
+            return
+        }
+
+        val centerY = height / 2f
+        val barWidth = width.toFloat() / amplitudes.size
+
+        for (i in amplitudes.indices) {
+            val x = i * barWidth + barWidth / 2
+            val amplitude = amplitudes[i] * centerY
+            canvas.drawLine(x, centerY - amplitude, x, centerY + amplitude, paint)
+        }
+    }
+  
+    fun updateAmplitude(amplitude: Float) {
+        if (!isRecording) return
+        val normalized = abs(amplitude) / 32767f
+        amplitudes.add(normalized)
         if (amplitudes.size > 100) amplitudes.removeAt(0)
         invalidate()
     }
 
-    fun clear() {
+    fun startRecording() {
+        isRecording = true
         amplitudes.clear()
-        invalidate()
     }
 
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        val width = width.toFloat()
-        val height = height.toFloat()
-        val centerY = height / 2
-        val barWidth = width / 100
-
-        amplitudes.forEachIndexed { i, amp ->
-            val x = i * barWidth
-            val barHeight = amp * centerY
-            canvas.drawLine(x, centerY - barHeight, x, centerY + barHeight, paint)
-        }
+    fun stopRecording() {
+        isRecording = false
+        amplitudes.clear()
+        invalidate()
     }
 }
