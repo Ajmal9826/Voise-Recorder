@@ -61,61 +61,48 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
     }
 
     private fun startRecording() {
-    val dir = File(getExternalFilesDir(null), "VoiceRecorder")
-    if (!dir.exists()) {
-        dir.mkdirs()
-    }
-    currentFilePath = "${dir.absolutePath}/REC_${System.currentTimeMillis()}.m4a"
-    
-    mediaRecorder = MediaRecorder().apply {
-        setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION) // Hardware noise cancel
-        setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-        setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-        setOutputFile(currentFilePath)
-        try {
-            prepare()
-            start()
-        } catch (e: IOException) {
-            e.printStackTrace()
+        val dir = File(getExternalFilesDir(null), "VoiceRecorder")
+        if (!dir.exists()) {
+            dir.mkdirs()
         }
-    }
-    
-    // இங்க தான் மாற்றம் - reflection use பண்றோம்
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        try {
-            val method = mediaRecorder?.javaClass?.getMethod("getAudioSessionId")
-            val sessionId = method?.invoke(mediaRecorder) as Int
-            
-            if (sessionId != 0) {
-                if (NoiseSuppressor.isAvailable()) {
-                    noiseSuppressor = NoiseSuppressor.create(sessionId)
-                    noiseSuppressor?.enabled = true
-                }
-                if (AcousticEchoCanceler.isAvailable()) {
-                    echoCanceler = AcousticEchoCanceler.create(sessionId)
-                    echoCanceler?.enabled = true
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-}
+        currentFilePath = "${dir.absolutePath}/REC_${System.currentTimeMillis()}.m4a"
         
-        // prepare() க்கு அப்புறம் தான் audioSessionId கிடைக்கும்
-        val sessionId = mediaRecorder?.audioSessionId ?: 0
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN && sessionId != 0) {
-            if (NoiseSuppressor.isAvailable()) {
-                noiseSuppressor = NoiseSuppressor.create(sessionId)
-                noiseSuppressor?.enabled = true
-            }
-            if (AcousticEchoCanceler.isAvailable()) {
-                echoCanceler = AcousticEchoCanceler.create(sessionId)
-                echoCanceler?.enabled = true
+        mediaRecorder = MediaRecorder().apply {
+            setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION)
+            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            setAudioEncodingBitRate(128000)
+            setAudioSamplingRate(44100)
+            setOutputFile(currentFilePath)
+            try {
+                prepare()
+                start()
+            } catch (e: IOException) {
+                e.printStackTrace()
             }
         }
-    }
+        
+        // Reflection use பண்ணி audioSessionId எடுக்குறோம். Compile error வராது
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            try {
+                val method = mediaRecorder?.javaClass?.getMethod("getAudioSessionId")
+                val sessionId = method?.invoke(mediaRecorder) as? Int ?: 0
+                
+                if (sessionId != 0) {
+                    if (NoiseSuppressor.isAvailable()) {
+                        noiseSuppressor = NoiseSuppressor.create(sessionId)
+                        noiseSuppressor?.enabled = true
+                    }
+                    if (AcousticEchoCanceler.isAvailable()) {
+                        echoCanceler = AcousticEchoCanceler.create(sessionId)
+                        echoCanceler?.enabled = true
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    } // இங்க தான் function முடியுது
 
     private fun stopRecording() {
         try {
@@ -207,4 +194,4 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
         mediaPlayer?.release()
         mediaRecorder?.release()
     }
-}
+} // Class இங்க முடியுது
