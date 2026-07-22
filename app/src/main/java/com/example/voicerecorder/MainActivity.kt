@@ -61,24 +61,46 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
     }
 
     private fun startRecording() {
-        val dir = File(getExternalFilesDir(null), "VoiceRecorder")
-        if (!dir.exists()) {
-            dir.mkdirs()
+    val dir = File(getExternalFilesDir(null), "VoiceRecorder")
+    if (!dir.exists()) {
+        dir.mkdirs()
+    }
+    currentFilePath = "${dir.absolutePath}/REC_${System.currentTimeMillis()}.m4a"
+    
+    mediaRecorder = MediaRecorder().apply {
+        setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION) // Hardware noise cancel
+        setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+        setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        setOutputFile(currentFilePath)
+        try {
+            prepare()
+            start()
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
-        currentFilePath = "${dir.absolutePath}/REC_${System.currentTimeMillis()}.m4a"
-        
-        mediaRecorder = MediaRecorder().apply {
-            setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            setOutputFile(currentFilePath)
-            try {
-                prepare()
-                start()
-            } catch (e: IOException) {
-                e.printStackTrace()
+    }
+    
+    // இங்க தான் மாற்றம் - reflection use பண்றோம்
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        try {
+            val method = mediaRecorder?.javaClass?.getMethod("getAudioSessionId")
+            val sessionId = method?.invoke(mediaRecorder) as Int
+            
+            if (sessionId != 0) {
+                if (NoiseSuppressor.isAvailable()) {
+                    noiseSuppressor = NoiseSuppressor.create(sessionId)
+                    noiseSuppressor?.enabled = true
+                }
+                if (AcousticEchoCanceler.isAvailable()) {
+                    echoCanceler = AcousticEchoCanceler.create(sessionId)
+                    echoCanceler?.enabled = true
+                }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
+    }
+}
         
         // prepare() க்கு அப்புறம் தான் audioSessionId கிடைக்கும்
         val sessionId = mediaRecorder?.audioSessionId ?: 0
