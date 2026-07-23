@@ -1,49 +1,81 @@
-    package com.example.voicerecorder
+package com.example.voicerecorder
+import android.media.MediaPlayer
+import android.os.Handler
+import android.os.Looper
+import android.view.*
+import android.widget.*
+import androidx.recyclerview.widget.RecyclerView
+import java.io.File
 
-    import android.view.LayoutInflater
-    import android.view.View
-    import android.view.ViewGroup
-    import android.widget.ImageButton
-    import android.widget.TextView
-    import androidx.recyclerview.widget.RecyclerView
-    import java.io.File
+class RecordingAdapter(
+    private val files: ArrayList<File>,
+    private val listener: OnItemClickListener
+) : RecyclerView.Adapter<RecordingAdapter.ViewHolder>() {
 
-    class RecordingAdapter(
-        private var files: List<File>,
-        private val listener: OnItemClickListener
-    ) : RecyclerView.Adapter<RecordingAdapter.ViewHolder>() {
-
-        interface OnItemClickListener {
-            fun onPlay(file: File)
-            fun onShare(file: File)
-            fun onDelete(file: File)
-            fun onRename(file: File)
-        }
-
-        inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            val tvName: TextView = itemView.findViewById(R.id.tvFileName)
-            val tvDetails: TextView = itemView.findViewById(R.id.tvFileDetails)
-            val btnPlay: ImageButton = itemView.findViewById(R.id.btnPlay)
-            val btnShare: ImageButton = itemView.findViewById(R.id.btnShare)
-            val btnRename: ImageButton = itemView.findViewById(R.id.btnRename)
-            val btnDelete: ImageButton = itemView.findViewById(R.id.btnDelete)
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_recording, parent, false)
-            return ViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val file = files[position]
-            holder.tvName.text = file.nameWithoutExtension
-            holder.tvDetails.text = "${file.extension} • ${file.length() / 1024} KB"
-
-            holder.btnPlay.setOnClickListener { listener.onPlay(file) }
-            holder.btnShare.setOnClickListener { listener.onShare(file) }
-            holder.btnRename.setOnClickListener { listener.onRename(file) }
-            holder.btnDelete.setOnClickListener { listener.onDelete(file) }
-        }
-
-        override fun getItemCount() = files.size
+    private var playingFile: File? = null
+    fun setPlayingState(file: File, isPlaying: Boolean) {
+        playingFile = if(isPlaying) file else null
+        notifyDataSetChanged()
     }
+
+    inner class ViewHolder(v: View): RecyclerView.ViewHolder(v) {
+        private var handler = Handler(Looper.getMainLooper())
+        private var updateSeekbar: Runnable? = null
+
+        fun bind(file: File) {
+            val tvName = itemView.findViewById<TextView>(R.id.tvFileName)
+            val seekBar = itemView.findViewById<SeekBar>(R.id.seekBar)
+            val tvCurrent = itemView.findViewById<TextView>(R.id.tvCurrentTime)
+            val tvTotal = itemView.findViewById<TextView>(R.id.tvTotalTime)
+            val playBtn = itemView.findViewById<ImageButton>(R.id.btnPlayPause)
+            val menuBtn = itemView.findViewById<ImageButton>(R.id.btnMenu)
+
+            tvName.text = file.name
+            playBtn.setImageResource(if(playingFile == file) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play)
+
+            playBtn.setOnClickListener { listener.onPlayPause(file, seekBar, tvCurrent, tvTotal) }
+            menuBtn.setOnClickListener { listener.onMenuClick(file, it) }
+
+            seekBar.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
+                override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
+                    if(fromUser) listener.onSeekTo(file, progress)
+                }
+                override fun onStartTrackingTouch(p0: SeekBar?) {}
+                override fun onStopTrackingTouch(p0: SeekBar?) {}
+            })
+
+            updateSeekbar = object : Runnable {
+                override fun run() {
+                    if(playingFile == file && listener.getMediaPlayer()?.isPlaying == true) {
+                        val mp = listener.getMediaPlayer()
+                        seekBar.max = mp?.duration?: 0
+                        seekBar.progress = mp?.currentPosition?: 0
+                        tvCurrent.text = formatTime(mp?.currentPosition?: 0)
+                        tvTotal.text = formatTime(mp?.duration?: 0)
+                        handler.postDelayed(this, 500)
+                    }
+                }
+            }
+            if(playingFile == file) handler.post(updateSeekbar!!) else {
+                tvCurrent.text = "0:00"; tvTotal.text = formatTime(MediaPlayer.create(itemView.context, android.net.Uri.fromFile(file))?.duration?: 0)
+            }
+        }
+        private fun formatTime(ms: Int): String {
+            val seconds = ms / 1000
+            return String.format("%d:%02d", seconds / 60, seconds % 60)
+        }
+    }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = ViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.item_recording, parent, false))
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) = holder.bind(files[position])
+    override fun getItemCount() = files.size
+
+    interface OnItemClickListener {
+        fun onPlayPause(file: File, seekBar: SeekBar, tvCurrent: TextView, tvTotal: TextView)
+        fun onSeekTo(file: File, position: Int)
+        fun getMediaPlayer(): MediaPlayer?
+        fun onMenuClick(file: File, view: View)
+        fun onRename(file: File)
+        fun onDelete(file: File)
+        fun onShare(file: File)
+    }
+}
