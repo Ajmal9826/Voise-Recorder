@@ -77,15 +77,23 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
         }
         
         // audioSessionId fix
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            try {
-                val sessionId = mediaRecorder?.audioSessionId ?: 0
-                if (sessionId != 0) {
-                    if (NoiseSuppressor.isAvailable()) noiseSuppressor = NoiseSuppressor.create(sessionId)?.apply { enabled = true }
-                    if (AcousticEchoCanceler.isAvailable()) echoCanceler = AcousticEchoCanceler.create(sessionId)?.apply { enabled = true }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    try {
+        mediaRecorder?.let { recorder ->
+            val sessionId = recorder.audioSessionId
+            if (sessionId != 0) {
+                if (NoiseSuppressor.isAvailable()) {
+                    noiseSuppressor = NoiseSuppressor.create(sessionId)
+                    noiseSuppressor?.enabled = true
                 }
-            } catch (e: Exception) { e.printStackTrace() }
+                if (AcousticEchoCanceler.isAvailable()) {
+                    echoCanceler = AcousticEchoCanceler.create(sessionId)
+                    echoCanceler?.enabled = true
+                }
+            }
         }
+    } catch (e: Exception) { e.printStackTrace() }
+}
     }
     
     private fun pauseRecording() { 
