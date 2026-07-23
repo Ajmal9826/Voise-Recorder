@@ -1,4 +1,5 @@
 package com.example.voicerecorder
+
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,7 +11,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import android.widget.*
+import android.widget.*  // இதுல SeekBar, TextView, Button எல்லாம் வரும்
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
@@ -19,8 +20,11 @@ import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
+import java.text.SimpleDateFormat  // புதுசு 1
+import java.util.Date                // புதுசு 2
+import java.util.Locale              // புதுசு 3
+import java.util.Timer               // புதுசு 4
+import java.util.TimerTask           // புதுசு 5
 
 class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
 
