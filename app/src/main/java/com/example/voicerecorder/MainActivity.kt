@@ -61,38 +61,39 @@ class MainActivity : AppCompatActivity(), RecordingAdapter.OnItemClickListener {
     }
 
     private fun startRecording() {
-        isRecording = true; isPaused = false; btnRecord.text = "STOP"; btnPause.isEnabled = true; btnPause.text = "PAUSE"
-        startTimer(); waveformView.startRecording()
-        val dir = File(getExternalFilesDir(null), "VoiceRecorder"); if (!dir.exists()) dir.mkdirs()
+    isRecording = true; isPaused = false; btnRecord.text = "STOP"; btnPause.isEnabled = true; btnPause.text = "PAUSE"
+    startTimer(); waveformView.startRecording()
+    val dir = File(getExternalFilesDir(null), "VoiceRecorder"); if (!dir.exists()) dir.mkdirs()
 
-        val sdf = SimpleDateFormat("dd-MM-yyyy_hh-mm-ss-SSS-a", Locale.getDefault())
-        val timeStamp = sdf.format(Date())
-        currentFilePath = "${dir.absolutePath}/REC_${timeStamp}.m4a"
+    val sdf = SimpleDateFormat("dd-MM-yyyy_hh-mm-ss-SSS-a", Locale.getDefault())
+    val timeStamp = sdf.format(Date())
+    currentFilePath = "${dir.absolutePath}/REC_${timeStamp}.m4a"
 
-        mediaRecorder = MediaRecorder().apply {
-            setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            setOutputFile(currentFilePath); prepare(); start()
-        }
-        
-        // audioSessionId fix
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-    try {
-        mediaRecorder?.let { recorder ->
-            val sessionId = recorder.audioSessionId
-            if (sessionId != 0) {
-                if (NoiseSuppressor.isAvailable()) {
-                    noiseSuppressor = NoiseSuppressor.create(sessionId)
-                    noiseSuppressor?.enabled = true
-                }
-                if (AcousticEchoCanceler.isAvailable()) {
-                    echoCanceler = AcousticEchoCanceler.create(sessionId)
-                    echoCanceler?.enabled = true
+    mediaRecorder = MediaRecorder().apply {
+        setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION)
+        setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+        setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+        setOutputFile(currentFilePath); prepare(); start()
+    }
+    
+    // Noise Cancel block - இத மட்டும் மேல இருக்குற மாதிரி மாத்து
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        try {
+            mediaRecorder?.let { recorder ->
+                val sessionId = recorder.getAudioSessionId()
+                if (sessionId != 0) {
+                    if (NoiseSuppressor.isAvailable()) {
+                        noiseSuppressor = NoiseSuppressor.create(sessionId)
+                        noiseSuppressor?.enabled = true
+                    }
+                    if (AcousticEchoCanceler.isAvailable()) {
+                        echoCanceler = AcousticEchoCanceler.create(sessionId)
+                        echoCanceler?.enabled = true
+                    }
                 }
             }
-        }
-    } catch (e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) { e.printStackTrace() }
+    }
 }
     }
     
