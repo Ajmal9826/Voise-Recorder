@@ -3,99 +3,57 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="24dp"
-    android:background="#FFFFFF">
+    android:padding="16dp">
 
     <TextView
         android:id="@+id/tvTimer"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
         android:text="00:00"
         android:textSize="48sp"
-        android:textStyle="bold"/>
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="16dp"/>
 
-    <!-- Waveform - background transparent, line visible -->
     <com.example.voicerecorder.WaveformView
         android:id="@+id/waveformView"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:layout_marginTop="20dp"
-        android:background="@android:color/transparent"/>
+        android:layout_height="80dp"
+        android:layout_marginBottom="16dp"/>
 
-    <!-- 3 Buttons Row 1 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginTop="30dp">
+        android:orientation="horizontal">
 
-        <Button 
-            android:id="@+id/btnRecord" 
-            android:layout_width="wrap_content"
+        <Button
+            android:id="@+id/btnRecord"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="🎤 Record" 
-            android:layout_margin="4dp"/>
-            
-        <Button 
-            android:id="@+id/btnPause" 
-            android:layout_width="wrap_content"
+            android:layout_weight="1"
+            android:text="START RECORDING"/>
+
+        <Button
+            android:id="@+id/btnPause"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="⏸ Pause" 
-            android:layout_margin="4dp"/>
-            
-        <Button 
-            android:id="@+id/btnSave" 
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="💾 Save" 
-            android:layout_margin="4dp"/>
+            android:layout_weight="1"
+            android:text="PAUSE"
+            android:enabled="false"/>
     </LinearLayout>
 
-    <!-- 3 Buttons Row 2 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:layout_marginTop="10dp">
-
-        <Button 
-            android:id="@+id/btnPlay" 
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="▶ Play" 
-            android:layout_margin="4dp"/>
-            
-        <Button 
-            android:id="@+id/btnShare" 
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="📤 Share" 
-            android:layout_margin="4dp"/>
-            
-        <Button 
-            android:id="@+id/btnDelete" 
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="🗑 Delete" 
-            android:layout_margin="4dp"/>
-    </LinearLayout>
-
-    <!-- Recordings List -->
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Saved Recordings:"
-        android:textStyle="bold"
-        android:layout_marginTop="20dp"/>
+        android:textSize="16sp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="8dp"/>
 
-        <androidx.recyclerview.widget.RecyclerView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvRecordings"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp"/>
+        android:layout_weight="1"/>
 
 </LinearLayout>
